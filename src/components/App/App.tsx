@@ -1,15 +1,29 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ITodo } from '../../types/types';
+import { activeTodo, completedTodo } from '../../utils';
 import Footer from '../Footer/Footer';
 import Form from '../Form/Form';
 import ItemTodo from '../ItemTodo/ItemTodo';
 import List from '../List/List';
 
+import classes from './App.module.scss'
+
 const App = () => {
   const [todos, setTodos] = useState<ITodo[]>([]);
-  const [activeTodos, setActiveTodos] = useState<ITodo[]>([]);
-  const [completedTodos, setCompletedTodo] = useState<ITodo[]>([]);
-  const [existing, setExisting] = useState<ITodo[]>([...todos])
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  let todosToShow: ITodo[] = [];
+  let activeTodoLength: number = 0;
+
+  switch (selectedFilter) {
+    case 'completed':
+      todosToShow = completedTodo(todos);
+      break
+    case 'active':
+      todosToShow = activeTodo(todos);
+      break
+    case 'all':
+      todosToShow = [...todos];
+    }
 
   const addNewTodo = (todo: ITodo) => {
     setTodos([...todos, todo])
@@ -26,40 +40,25 @@ const App = () => {
     setTodos(todos.filter(todo => todo.id!== id));
   };
 
-  const categoryTodo = (category: string) => {
-    switch (category){
-      case 'all':
-        setExisting(todos);
-        break
-      case 'active':
-        setExisting(activeTodos);
-        break
-      case 'completed':
-        setExisting(completedTodos);
-        break
-    }
+  const applyFilter = (value: string) => {
+    setSelectedFilter(value);
   }
 
   const deleteCompletedTodos = () => {
-    setTodos(activeTodos);
+    const active = activeTodo(todos)
+    setTodos(active)
   } 
- 
-
-  useEffect(() => {
-    setExisting(todos);
-  },[todos])
 
   useMemo(() => {
-    setCompletedTodo([...todos].filter(todo => todo.completed == true))
-    setActiveTodos([...todos].filter(todo => todo.completed == false))
-  },[todos]);
+    activeTodoLength = activeTodo(todos).length;
+  },[todos, selectedFilter])
   
   return (
-    <div className='flex justify-center min-h-full'>
+    <div className={classes.app}>
       <div className="mt-40 bg-slate-200 shadow-ld w-2/4">
         <Form addNewTodo={addNewTodo}></Form>
-        <List items={existing} renderItem={(todo) => <ItemTodo removeTodo={removeTodo} completeTodo={completeTodo} key={todo.id} todo={todo}></ItemTodo>}></List>
-        <Footer deleteCompletedTodos={deleteCompletedTodos} categoryTodo={categoryTodo} activeTodos={activeTodos}></Footer>
+        <List items={todosToShow} renderItem={(todo) => <ItemTodo removeTodo={removeTodo} completeTodo={completeTodo} key={todo.id} todo={todo}></ItemTodo>}></List>
+        <Footer selectedFilter={selectedFilter} activeTodoLength={activeTodoLength} deleteCompletedTodos={deleteCompletedTodos} applyFilter={applyFilter}></Footer>
       </div>
     </div>
   );
